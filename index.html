@@ -3,444 +3,484 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Monthly Finance & Triple Bar Graph</title>
+  <title>BizPulse - Monthly Financial Tracker</title>
   <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#1e293b">
+  <meta name="theme-color" content="#2563eb">
   <link rel="apple-touch-icon" href="./icon.svg">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js & Plugins -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              sales: '#2563EB',
+              expense: '#DC2626',
+              profit: '#16A34A',
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    :root {
-      --primary: #2563eb;
-      --expense: #dc2626;
-      --profit: #16a34a;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text-main); padding-bottom: 90px; }
-
-    /* Header */
-    header {
-      background: #0f172a;
-      color: #fff;
-      padding: 16px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
     }
-    header h1 { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .currency-select {
-      background: #1e293b;
-      color: #f8fafc;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      outline: none;
+    input[type=number] {
+      -moz-appearance: textfield;
     }
-
-    /* Container */
-    .container { max-width: 960px; margin: 16px auto; padding: 0 16px; display: flex; flex-direction: column; gap: 16px; }
-
-    /* Summary Stats Cards */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
     }
-    .stat-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 14px 12px;
-      border: 1px solid var(--border);
-      text-align: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.5);
+      border-radius: 9999px;
     }
-    .stat-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .stat-val { font-size: 1.1rem; font-weight: 800; }
-    .stat-sales .stat-title, .stat-sales .stat-val { color: var(--primary); }
-    .stat-expense .stat-title, .stat-expense .stat-val { color: var(--expense); }
-    .stat-profit .stat-title, .stat-profit .stat-val { color: var(--profit); }
-
-    /* Main Cards */
-    .card {
-      background: var(--card-bg);
-      border-radius: 14px;
-      padding: 18px;
-      border: 1px solid var(--border);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-    .card-header h2 { font-size: 1rem; font-weight: 700; color: #1e293b; }
-
-    .chart-container {
-      position: relative;
-      width: 100%;
-      height: 320px;
-    }
-
-    /* Responsive Table */
-    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
-    th {
-      background: #f8fafc;
-      color: var(--text-muted);
-      font-weight: 600;
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-      text-transform: uppercase;
-      font-size: 0.75rem;
-    }
-    td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-    .cell-sales { color: var(--primary); font-weight: 600; }
-    .cell-expense { color: var(--expense); font-weight: 600; }
-    .cell-profit { color: var(--profit); font-weight: 700; }
-    .btn-delete { background: none; border: none; color: #94a3b8; font-size: 1.1rem; cursor: pointer; padding: 4px; }
-    .btn-delete:hover { color: #ef4444; }
-
-    /* Action Buttons */
-    .btn-export {
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      color: #334155;
-      padding: 6px 12px;
-      font-size: 0.8rem;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    /* Floating Action Button (FAB) */
-    .fab {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      width: 58px;
-      height: 58px;
-      background: #2563eb;
-      color: #fff;
-      border-radius: 50%;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      box-shadow: 0 8px 16px rgba(37,99,235,0.35);
-      cursor: pointer;
-      z-index: 30;
-      transition: transform 0.2s, background-color 0.2s;
-    }
-    .fab:active { transform: scale(0.92); background: #1d4ed8; }
-
-    /* Modal Form */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      z-index: 50;
-      visibility: hidden;
-      opacity: 0;
-      transition: opacity 0.2s ease, visibility 0.2s;
-    }
-    .modal-overlay.open { visibility: visible; opacity: 1; }
-    @media(min-width: 640px) {
-      .modal-overlay { align-items: center; }
-    }
-    .modal-sheet {
-      background: #fff;
-      width: 100%;
-      max-width: 480px;
-      border-top-left-radius: 20px;
-      border-top-right-radius: 20px;
-      padding: 24px;
-      box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
-      transform: translateY(100%);
-      transition: transform 0.25s ease-out;
-    }
-    @media(min-width: 640px) {
-      .modal-sheet { border-radius: 16px; transform: translateY(20px); }
-    }
-    .modal-overlay.open .modal-sheet { transform: translateY(0); }
-
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-header h3 { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
-    .btn-close { background: none; border: none; font-size: 1.4rem; color: #94a3b8; cursor: pointer; }
-
-    .form-group { margin-bottom: 14px; }
-    label { font-size: 0.82rem; font-weight: 600; color: #475569; display: block; margin-bottom: 6px; }
-    input {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 1rem;
-      outline: none;
-    }
-    input:focus { border-color: #2563eb; }
-    .profit-preview {
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      color: #166534;
-      font-weight: 700;
-    }
-    .btn-submit {
-      width: 100%;
-      background: #2563eb;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 14px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 6px;
-    }
-    .btn-submit:active { background: #1d4ed8; }
   </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
 
-  <!-- Top Bar -->
-  <header>
-    <h1>
-      <span>📊</span> FinTrack
-    </h1>
-    <select id="currencySelector" class="currency-select" onchange="updateCurrency()">
-      <option value="$">USD ($)</option>
-      <option value="Rs. " selected>PKR (Rs.)</option>
-      <option value="€">EUR (€)</option>
-      <option value="£">GBP (£)</option>
-    </select>
+  <!-- Mobile-first Top Bar / Navigation -->
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm px-4 py-3 sm:px-6">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <i class="fa-solid fa-chart-column text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">BizPulse</h1>
+          <p class="text-xs text-slate-500 font-medium">Sales, Expense & Profit Tracker</p>
+        </div>
+      </div>
+      
+      <!-- Right Controls: Year selector & Currency -->
+      <div class="flex items-center gap-2">
+        <div class="relative">
+          <select id="currencySelector" onchange="handleCurrencyChange(this.value)" class="bg-slate-100 hover:bg-slate-200 font-semibold text-xs text-slate-700 py-1.5 px-3 rounded-lg border-0 focus:ring-2 focus:ring-blue-500 cursor-pointer transition">
+            <option value="$">USD ($)</option>
+            <option value="Rs.">PKR (Rs.)</option>
+            <option value="€">EUR (€)</option>
+            <option value="£">GBP (£)</option>
+          </select>
+        </div>
+        <button onclick="openModal()" class="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-3.5 py-2 rounded-xl shadow-md shadow-blue-600/20 active:scale-95 transition">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span class="hidden sm:inline">Add Entry</span>
+          <span class="sm:hidden">Add</span>
+        </button>
+      </div>
+    </div>
   </header>
 
-  <main class="container">
-    <!-- Totals Summary Header -->
-    <div class="stats-grid">
-      <div class="stat-card stat-sales">
-        <div class="stat-title">Total Sales</div>
-        <div class="stat-val" id="totalSales">0</div>
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- Top Dashboard Header with Year Filtering -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900" id="currentYearTitle">2026 Financial Overview</h2>
+        <p class="text-sm text-slate-500">Track monthly operational metrics and bottom line</p>
       </div>
-      <div class="stat-card stat-expense">
-        <div class="stat-title">Total Expense</div>
-        <div class="stat-val" id="totalExpense">0</div>
-      </div>
-      <div class="stat-card stat-profit">
-        <div class="stat-title">Net Profit</div>
-        <div class="stat-val" id="totalProfit">0</div>
+      <div class="flex items-center gap-3">
+        <label for="yearFilter" class="text-sm font-medium text-slate-600">Select Year:</label>
+        <select id="yearFilter" onchange="onYearChange(this.value)" class="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer">
+        </select>
+        <button onclick="loadSampleData()" title="Load Sample Demo Data" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-2.5 py-2 rounded-lg transition active:scale-95">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Demo
+        </button>
       </div>
     </div>
 
-    <!-- Triple Bar Chart -->
-    <section class="card">
-      <div class="card-header">
-        <h2>Triple Bar Comparison</h2>
+    <!-- Metric Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Total Sales -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center justify-between relative overflow-hidden">
+        <div class="space-y-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Sales</span>
+          <h3 class="text-2xl font-bold text-slate-900" id="cardSales">$0</h3>
+          <p class="text-xs text-blue-600 font-medium flex items-center gap-1">
+            <span class="inline-block w-2 h-2 rounded-full bg-blue-600"></span> Gross Revenue
+          </p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-sack-dollar"></i>
+        </div>
       </div>
-      <div class="chart-container">
-        <canvas id="monthlyChart"></canvas>
-      </div>
-    </section>
 
-    <!-- Monthly Breakdown Table -->
-    <section class="card">
-      <div class="card-header">
-        <h2>Monthly Breakdown</h2>
-        <button class="btn-export" onclick="exportCSV()">Export CSV</button>
+      <!-- Total Expenses -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center justify-between relative overflow-hidden">
+        <div class="space-y-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Expenses</span>
+          <h3 class="text-2xl font-bold text-slate-900" id="cardExpenses">$0</h3>
+          <p class="text-xs text-rose-600 font-medium flex items-center gap-1">
+            <span class="inline-block w-2 h-2 rounded-full bg-rose-600"></span> Overhead Costs
+          </p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-receipt"></i>
+        </div>
       </div>
-      <div class="table-container">
-        <table>
-          <thead>
+
+      <!-- Net Profit -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center justify-between relative overflow-hidden">
+        <div class="space-y-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Net Profit</span>
+          <h3 class="text-2xl font-bold" id="cardProfit">$0</h3>
+          <p class="text-xs text-emerald-600 font-medium flex items-center gap-1" id="cardProfitStatus">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-600"></span> Bottom Line
+          </p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl" id="profitIconContainer">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
+        </div>
+      </div>
+
+      <!-- Profit Margin % -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center justify-between relative overflow-hidden">
+        <div class="space-y-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Profit Margin</span>
+          <h3 class="text-2xl font-bold text-slate-900" id="cardMargin">0.0%</h3>
+          <p class="text-xs text-slate-500 font-medium">Profit / Sales</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-percent"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grouped Triple Bar Chart Container -->
+    <div class="bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">Monthly Comparison Graph</h3>
+          <p class="text-xs text-slate-500">Grouped triple bars comparing Sales, Expense, and Profit for each month</p>
+        </div>
+        <div class="flex items-center gap-3 text-xs font-semibold">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Sales
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-600"></span> Expense
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Profit
+          </span>
+        </div>
+      </div>
+
+      <div class="relative w-full h-72 sm:h-96 pt-4">
+        <canvas id="monthlyBarChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Monthly Records Table & Data Controls -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div class="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/50">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Monthly Records Table</h3>
+          <p class="text-xs text-slate-500">Breakdown of recorded months for <span id="tableYearLabel">2026</span></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="exportToCSV()" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition active:scale-95">
+            <i class="fa-solid fa-file-arrow-down text-blue-600"></i> Export CSV
+          </button>
+          <button onclick="openModal()" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition active:scale-95">
+            <i class="fa-solid fa-plus"></i> New Month
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left text-sm text-slate-600">
+          <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-400 border-b border-slate-100">
             <tr>
-              <th>Month</th>
-              <th>Sales</th>
-              <th>Expense</th>
-              <th>Profit</th>
-              <th style="width: 40px;"></th>
+              <th scope="col" class="py-3 px-4 sm:px-6">Month</th>
+              <th scope="col" class="py-3 px-4 text-right">Sales</th>
+              <th scope="col" class="py-3 px-4 text-right">Expense</th>
+              <th scope="col" class="py-3 px-4 text-right">Profit / Loss</th>
+              <th scope="col" class="py-3 px-4 text-right">Margin</th>
+              <th scope="col" class="py-3 px-4 sm:px-6 text-center">Actions</th>
             </tr>
           </thead>
-          <tbody id="dataTableBody"></tbody>
+          <tbody id="recordsTableBody" class="divide-y divide-slate-100 font-medium">
+          </tbody>
         </table>
       </div>
-    </section>
+
+      <!-- Empty State -->
+      <div id="tableEmptyState" class="hidden py-12 text-center">
+        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mx-auto mb-3">
+          <i class="fa-regular fa-folder-open text-2xl"></i>
+        </div>
+        <h4 class="text-sm font-semibold text-slate-700">No data found for this year</h4>
+        <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto">Click "Add Entry" to record your sales and expenses, or load demo data.</p>
+        <button onclick="openModal()" class="mt-4 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-xl">
+          + Add Month Data
+        </button>
+      </div>
+    </div>
   </main>
 
-  <!-- Floating Add Button -->
-  <button class="fab" onclick="openModal()" title="Add Month Data">+</button>
+  <!-- Mobile Floating Action Button (FAB) -->
+  <div class="sm:hidden fixed bottom-6 right-6 z-20">
+    <button onclick="openModal()" aria-label="Add New Entry" class="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xl shadow-blue-600/40 active:scale-95 transition">
+      <i class="fa-solid fa-plus text-xl"></i>
+    </button>
+  </div>
 
-  <!-- Slide-up Modal Form -->
-  <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnBg(event)">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <h3 id="modalTitle">Add Monthly Data</h3>
-        <button class="btn-close" onclick="closeModal()">✕</button>
+  <!-- Entry / Edit Modal Dialog -->
+  <div id="entryModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-150">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 id="modalTitle" class="text-lg font-bold text-slate-900">Add Monthly Record</h3>
+        <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
-      <form id="financeForm" onsubmit="handleFormSubmit(event)">
-        <div class="form-group">
-          <label for="monthInput">Month</label>
-          <input type="month" id="monthInput" required>
+
+      <form id="recordForm" onsubmit="saveRecord(event)" class="mt-4 space-y-4">
+        <input type="hidden" id="editEntryId" value="">
+
+        <!-- Year & Month Selectors -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Year</label>
+            <input type="number" id="inputYear" required min="2000" max="2100" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Month</label>
+            <select id="inputMonth" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition">
+              <option value="1">Jan (January)</option>
+              <option value="2">Feb (February)</option>
+              <option value="3">Mar (March)</option>
+              <option value="4">Apr (April)</option>
+              <option value="5">May (May)</option>
+              <option value="6">Jun (June)</option>
+              <option value="7">Jul (July)</option>
+              <option value="8">Aug (August)</option>
+              <option value="9">Sep (September)</option>
+              <option value="10">Oct (October)</option>
+              <option value="11">Nov (November)</option>
+              <option value="12">Dec (December)</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="salesInput">Total Sales</label>
-          <input type="number" id="salesInput" step="any" placeholder="0.00" required oninput="calcProfit()">
+
+        <!-- Sales Input -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">
+            Total Sales / Revenue (<span class="currencyLabel">$</span>)
+          </label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-2.5 text-slate-400 font-bold currencyLabel text-sm">$</span>
+            <input type="number" step="any" min="0" id="inputSales" oninput="calculateLiveProfit()" required placeholder="0.00" class="w-full pl-8 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition">
+          </div>
         </div>
-        <div class="form-group">
-          <label for="expenseInput">Total Expense</label>
-          <input type="number" id="expenseInput" step="any" placeholder="0.00" required oninput="calcProfit()">
+
+        <!-- Expense Input -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">
+            Total Expenses (<span class="currencyLabel">$</span>)
+          </label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-2.5 text-slate-400 font-bold currencyLabel text-sm">$</span>
+            <input type="number" step="any" min="0" id="inputExpense" oninput="calculateLiveProfit()" required placeholder="0.00" class="w-full pl-8 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition">
+          </div>
         </div>
-        <div class="form-group">
-          <label for="profitInput">Net Profit (Auto-Calculated)</label>
-          <input type="number" id="profitInput" step="any" class="profit-preview" placeholder="0.00" readonly>
+
+        <!-- Profit Input -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold text-slate-700">
+              Net Profit (<span class="currencyLabel">$</span>)
+            </label>
+            <span class="text-[10px] text-slate-400 font-medium">(Auto: Sales - Expense)</span>
+          </div>
+          <div class="relative">
+            <span class="absolute left-3.5 top-2.5 text-slate-400 font-bold currencyLabel text-sm">$</span>
+            <input type="number" step="any" id="inputProfit" placeholder="0.00" class="w-full pl-8 pr-3 py-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl text-sm font-bold text-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition">
+          </div>
         </div>
-        <button type="submit" class="btn-submit">Save Month Data</button>
+
+        <!-- Submit & Cancel -->
+        <div class="flex items-center gap-3 pt-3">
+          <button type="button" onclick="closeModal()" class="w-1/2 py-2.5 rounded-xl border border-slate-200 font-semibold text-sm text-slate-600 hover:bg-slate-100 transition">
+            Cancel
+          </button>
+          <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 font-semibold text-sm text-white shadow-md shadow-blue-600/30 transition active:scale-98">
+            Save Record
+          </button>
+        </div>
       </form>
     </div>
   </div>
 
-  <script>
-    let currency = localStorage.getItem('fin_currency') || 'Rs. ';
-    document.getElementById('currencySelector').value = currency;
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2">
+    <i class="fa-solid fa-check-circle text-emerald-400"></i>
+    <span id="toastMsg">Saved successfully</span>
+  </div>
 
-    // Default starter dummy data
-    let records = JSON.parse(localStorage.getItem('fin_records')) || [
-      { month: '2026-01', sales: 150000, expense: 95000, profit: 55000 },
-      { month: '2026-02', sales: 180000, expense: 110000, profit: 70000 },
-      { month: '2026-03', sales: 210000, expense: 125000, profit: 85000 }
+  <footer class="mt-auto py-4 text-center text-xs text-slate-400 border-t border-slate-200">
+    BizPulse Financials &bull; Auto-saved to browser local storage
+  </footer>
+
+  <script>
+    const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const FULL_MONTH_NAMES = [
+      "January", "February", "March", "April", "May", "June", 
+      "July", "August", "September", "October", "November", "December"
     ];
 
+    let records = [];
+    let selectedYear = new Date().getFullYear();
+    let currencySymbol = '$';
     let chartInstance = null;
 
-    function formatMonth(ymStr) {
-      if (!ymStr) return '';
-      const [year, month] = ymStr.split('-');
-      const date = new Date(year, month - 1);
-      return date.toLocaleString('default', { month: 'short', year: 'numeric' });
-    }
+    const STORAGE_KEY = 'bizpulse_finance_records';
+    const CURRENCY_KEY = 'bizpulse_currency';
 
-    function calcProfit() {
-      const sales = parseFloat(document.getElementById('salesInput').value) || 0;
-      const expense = parseFloat(document.getElementById('expenseInput').value) || 0;
-      document.getElementById('profitInput').value = (sales - expense).toFixed(2);
-    }
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedCurrency = localStorage.getItem(CURRENCY_KEY);
+      if (savedCurrency) {
+        currencySymbol = savedCurrency;
+        document.getElementById('currencySelector').value = currencySymbol;
+      }
+      updateCurrencyLabels();
 
-    function updateCurrency() {
-      currency = document.getElementById('currencySelector').value;
-      localStorage.setItem('fin_currency', currency);
-      renderAll();
-    }
+      const savedRecords = localStorage.getItem(STORAGE_KEY);
+      if (savedRecords) {
+        try {
+          records = JSON.parse(savedRecords);
+        } catch(e) {
+          records = [];
+        }
+      }
 
-    function openModal() {
-      const now = new Date();
-      const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      document.getElementById('monthInput').value = currentYM;
-      document.getElementById('salesInput').value = '';
-      document.getElementById('expenseInput').value = '';
-      document.getElementById('profitInput').value = '';
-      document.getElementById('modalOverlay').classList.add('open');
-    }
-
-    function closeModal() {
-      document.getElementById('modalOverlay').classList.remove('open');
-    }
-
-    function closeModalOnBg(e) {
-      if (e.target.id === 'modalOverlay') closeModal();
-    }
-
-    function handleFormSubmit(e) {
-      e.preventDefault();
-      const month = document.getElementById('monthInput').value;
-      const sales = parseFloat(document.getElementById('salesInput').value) || 0;
-      const expense = parseFloat(document.getElementById('expenseInput').value) || 0;
-      const profit = parseFloat(document.getElementById('profitInput').value) || (sales - expense);
-
-      const existingIndex = records.findIndex(r => r.month === month);
-      if (existingIndex > -1) {
-        records[existingIndex] = { month, sales, expense, profit };
+      if (!records || records.length === 0) {
+        loadSampleData(false);
       } else {
-        records.push({ month, sales, expense, profit });
+        initYearFilter();
+        refreshDashboard();
       }
 
-      records.sort((a, b) => a.month.localeCompare(b.month));
-      localStorage.setItem('fin_records', JSON.stringify(records));
-      closeModal();
-      renderAll();
-    }
-
-    function deleteRecord(month) {
-      if (confirm(`Remove records for ${formatMonth(month)}?`)) {
-        records = records.filter(r => r.month !== month);
-        localStorage.setItem('fin_records', JSON.stringify(records));
-        renderAll();
+      // Register Service Worker for offline PWA
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => {
+            console.log('SW registered successfully:', reg.scope);
+            // If an update is detected, trigger reload
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  window.location.reload();
+                }
+              };
+            };
+          })
+          .catch((err) => console.log('SW registration error:', err));
       }
-    }
+    });
 
-    function exportCSV() {
-      let csv = 'Month,Sales,Expense,Profit\n';
-      records.forEach(r => {
-        csv += `${r.month},${r.sales},${r.expense},${r.profit}\n`;
+    function initYearFilter() {
+      const yearFilter = document.getElementById('yearFilter');
+      const uniqueYears = [...new Set(records.map(r => Number(r.year)))].sort((a, b) => b - a);
+
+      const currentSystemYear = new Date().getFullYear();
+      if (!uniqueYears.includes(currentSystemYear)) {
+        uniqueYears.unshift(currentSystemYear);
+      }
+
+      yearFilter.innerHTML = '';
+      uniqueYears.forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        if (y === Number(selectedYear)) opt.selected = true;
+        yearFilter.appendChild(opt);
       });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.setAttribute('href', url);
-      a.setAttribute('download', 'finance_records.csv');
-      a.click();
-    }
 
-    function updateStats() {
-      const totalS = records.reduce((sum, r) => sum + r.sales, 0);
-      const totalE = records.reduce((sum, r) => sum + r.expense, 0);
-      const totalP = records.reduce((sum, r) => sum + r.profit, 0);
-
-      document.getElementById('totalSales').textContent = `${currency}${totalS.toLocaleString()}`;
-      document.getElementById('totalExpense').textContent = `${currency}${totalE.toLocaleString()}`;
-      document.getElementById('totalProfit').textContent = `${currency}${totalP.toLocaleString()}`;
-    }
-
-    function renderTable() {
-      const tbody = document.getElementById('dataTableBody');
-      tbody.innerHTML = '';
-      if (records.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:24px;">No records yet. Tap + to add one.</td></tr>`;
-        return;
+      if (!uniqueYears.includes(Number(selectedYear))) {
+        selectedYear = uniqueYears[0];
       }
-      records.forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${formatMonth(r.month)}</strong></td>
-          <td class="cell-sales">${currency}${r.sales.toLocaleString()}</td>
-          <td class="cell-expense">${currency}${r.expense.toLocaleString()}</td>
-          <td class="cell-profit">${currency}${r.profit.toLocaleString()}</td>
-          <td><button class="btn-delete" title="Delete" onclick="deleteRecord('${r.month}')">✕</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
     }
 
-    function renderChart() {
-      const ctx = document.getElementById('monthlyChart').getContext('2d');
-      const labels = records.map(r => formatMonth(r.month));
-      const salesData = records.map(r => r.sales);
-      const expenseData = records.map(r => r.expense);
-      const profitData = records.map(r => r.profit);
+    function refreshDashboard() {
+      document.getElementById('currentYearTitle').innerText = `${selectedYear} Financial Overview`;
+      document.getElementById('tableYearLabel').innerText = selectedYear;
+
+      const yearRecords = records.filter(r => Number(r.year) === Number(selectedYear));
+
+      let totalSales = 0;
+      let totalExpense = 0;
+      let totalProfit = 0;
+
+      yearRecords.forEach(r => {
+        totalSales += Number(r.sales || 0);
+        totalExpense += Number(r.expense || 0);
+        totalProfit += Number(r.profit || 0);
+      });
+
+      const profitMargin = totalSales > 0 ? ((totalProfit / totalSales) * 100).toFixed(1) : '0.0';
+
+      document.getElementById('cardSales').innerText = formatCurrency(totalSales);
+      document.getElementById('cardExpenses').innerText = formatCurrency(totalExpense);
+      
+      const profitEl = document.getElementById('cardProfit');
+      profitEl.innerText = formatCurrency(totalProfit);
+      if (totalProfit >= 0) {
+        profitEl.className = "text-2xl font-bold text-emerald-600";
+        document.getElementById('cardProfitStatus').innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-emerald-600"></span> Positive Net Income`;
+      } else {
+        profitEl.className = "text-2xl font-bold text-rose-600";
+        document.getElementById('cardProfitStatus').innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-rose-600"></span> Operating Loss`;
+      }
+
+      document.getElementById('cardMargin').innerText = `${profitMargin}%`;
+
+      renderTripleBarChart(yearRecords);
+      renderTable(yearRecords);
+    }
+
+    function renderTripleBarChart(yearRecords) {
+      const ctx = document.getElementById('monthlyBarChart').getContext('2d');
+
+      const salesData = new Array(12).fill(0);
+      const expenseData = new Array(12).fill(0);
+      const profitData = new Array(12).fill(0);
+
+      yearRecords.forEach(r => {
+        const mIdx = Number(r.month) - 1;
+        if (mIdx >= 0 && mIdx < 12) {
+          salesData[mIdx] = Number(r.sales);
+          expenseData[mIdx] = Number(r.expense);
+          profitData[mIdx] = Number(r.profit);
+        }
+      });
 
       if (chartInstance) {
         chartInstance.destroy();
@@ -449,56 +489,320 @@
       chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: labels,
+          labels: MONTH_NAMES,
           datasets: [
-            { label: 'Sales', data: salesData, backgroundColor: '#2563eb', borderRadius: 4, barPercentage: 0.8 },
-            { label: 'Expense', data: expenseData, backgroundColor: '#dc2626', borderRadius: 4, barPercentage: 0.8 },
-            { label: 'Profit', data: profitData, backgroundColor: '#16a34a', borderRadius: 4, barPercentage: 0.8 }
+            {
+              label: 'Sales',
+              data: salesData,
+              backgroundColor: '#2563EB',
+              borderRadius: 6,
+              barPercentage: 0.85,
+              categoryPercentage: 0.75
+            },
+            {
+              label: 'Expense',
+              data: expenseData,
+              backgroundColor: '#DC2626',
+              borderRadius: 6,
+              barPercentage: 0.85,
+              categoryPercentage: 0.75
+            },
+            {
+              label: 'Profit',
+              data: profitData,
+              backgroundColor: profitData.map(val => val < 0 ? '#F87171' : '#16A34A'),
+              borderRadius: 6,
+              barPercentage: 0.85,
+              categoryPercentage: 0.75
+            }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
           plugins: {
-            legend: { position: 'top', labels: { boxWidth: 12, font: { weight: 600 } } },
+            legend: { display: false },
             tooltip: {
+              backgroundColor: '#0F172A',
+              titleFont: { size: 13, weight: 'bold', family: 'Inter' },
+              bodyFont: { size: 12, family: 'Inter' },
+              padding: 12,
+              cornerRadius: 10,
               callbacks: {
                 label: function(context) {
-                  return ` ${context.dataset.label}: ${currency}${context.raw.toLocaleString()}`;
+                  let label = context.dataset.label || '';
+                  if (label) label += ': ';
+                  if (context.parsed.y !== null) {
+                    label += formatCurrency(context.parsed.y);
+                  }
+                  return label;
                 }
               }
             }
           },
           scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(val) { return currency + val.toLocaleString(); }
-              },
-              grid: { color: '#f1f5f9' }
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Inter', weight: '600' }, color: '#64748B' }
             },
-            x: { grid: { display: false } }
+            y: {
+              grid: { color: '#F1F5F9', borderDash: [4, 4] },
+              ticks: {
+                font: { family: 'Inter' },
+                color: '#64748B',
+                callback: function(value) {
+                  return currencySymbol + (value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value);
+                }
+              }
+            }
           }
         }
       });
     }
 
-    function renderAll() {
-      updateStats();
-      renderTable();
-      renderChart();
-    }
+    function renderTable(yearRecords) {
+      const tbody = document.getElementById('recordsTableBody');
+      const emptyState = document.getElementById('tableEmptyState');
+      tbody.innerHTML = '';
 
-    // Register Service Worker for offline PWA functionality
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('FinTrack SW active'))
-          .catch(err => console.log('SW error:', err));
+      if (yearRecords.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      const sorted = [...yearRecords].sort((a, b) => Number(a.month) - Number(b.month));
+
+      sorted.forEach(item => {
+        const row = document.createElement('tr');
+        row.className = "hover:bg-slate-50/80 transition-colors";
+        const margin = item.sales > 0 ? ((item.profit / item.sales) * 100).toFixed(1) : 0;
+        const profitColor = item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600';
+
+        row.innerHTML = `
+          <td class="py-3 px-4 sm:px-6 font-semibold text-slate-800">
+            ${FULL_MONTH_NAMES[item.month - 1]}
+          </td>
+          <td class="py-3 px-4 text-right font-semibold text-blue-600">
+            ${formatCurrency(item.sales)}
+          </td>
+          <td class="py-3 px-4 text-right font-semibold text-rose-600">
+            ${formatCurrency(item.expense)}
+          </td>
+          <td class="py-3 px-4 text-right font-bold ${profitColor}">
+            ${formatCurrency(item.profit)}
+          </td>
+          <td class="py-3 px-4 text-right text-xs font-semibold text-slate-500">
+            ${margin}%
+          </td>
+          <td class="py-3 px-4 sm:px-6 text-center space-x-1">
+            <button onclick="editRecord('${item.id}')" title="Edit" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+              <i class="fa-regular fa-pen-to-square"></i>
+            </button>
+            <button onclick="deleteRecord('${item.id}')" title="Delete" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
       });
     }
 
-    renderAll();
+    function calculateLiveProfit() {
+      const sales = parseFloat(document.getElementById('inputSales').value) || 0;
+      const expense = parseFloat(document.getElementById('inputExpense').value) || 0;
+      document.getElementById('inputProfit').value = (sales - expense).toFixed(2);
+    }
+
+    function openModal(editId = null) {
+      const modal = document.getElementById('entryModal');
+      const form = document.getElementById('recordForm');
+      form.reset();
+
+      if (editId) {
+        const item = records.find(r => r.id === editId);
+        if (item) {
+          document.getElementById('modalTitle').innerText = 'Edit Monthly Record';
+          document.getElementById('editEntryId').value = item.id;
+          document.getElementById('inputYear').value = item.year;
+          document.getElementById('inputMonth').value = item.month;
+          document.getElementById('inputSales').value = item.sales;
+          document.getElementById('inputExpense').value = item.expense;
+          document.getElementById('inputProfit').value = item.profit;
+        }
+      } else {
+        document.getElementById('modalTitle').innerText = 'Add Monthly Record';
+        document.getElementById('editEntryId').value = '';
+        document.getElementById('inputYear').value = selectedYear;
+        
+        const currentMonthsInYear = records.filter(r => Number(r.year) === Number(selectedYear)).map(r => Number(r.month));
+        let nextMonth = 1;
+        for (let i = 1; i <= 12; i++) {
+          if (!currentMonthsInYear.includes(i)) {
+            nextMonth = i;
+            break;
+          }
+        }
+        document.getElementById('inputMonth').value = nextMonth;
+        document.getElementById('inputProfit').value = '';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('entryModal').classList.add('hidden');
+    }
+
+    function saveRecord(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editEntryId').value;
+      const year = parseInt(document.getElementById('inputYear').value, 10);
+      const month = parseInt(document.getElementById('inputMonth').value, 10);
+      const sales = parseFloat(document.getElementById('inputSales').value) || 0;
+      const expense = parseFloat(document.getElementById('inputExpense').value) || 0;
+      let profit = parseFloat(document.getElementById('inputProfit').value);
+
+      if (isNaN(profit)) {
+        profit = sales - expense;
+      }
+
+      if (editId) {
+        const idx = records.findIndex(r => r.id === editId);
+        if (idx !== -1) {
+          records[idx] = { id: editId, year, month, sales, expense, profit };
+          showToast('Record updated successfully');
+        }
+      } else {
+        const existingIdx = records.findIndex(r => Number(r.year) === year && Number(r.month) === month);
+        if (existingIdx !== -1) {
+          records[existingIdx] = { id: records[existingIdx].id, year, month, sales, expense, profit };
+          showToast(`Updated existing entry for ${MONTH_NAMES[month-1]} ${year}`);
+        } else {
+          const newRecord = {
+            id: 'biz_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            year,
+            month,
+            sales,
+            expense,
+            profit
+          };
+          records.push(newRecord);
+          showToast('New month record added');
+        }
+      }
+
+      saveToStorage();
+      selectedYear = year;
+      initYearFilter();
+      document.getElementById('yearFilter').value = year;
+      closeModal();
+      refreshDashboard();
+    }
+
+    function editRecord(id) {
+      openModal(id);
+    }
+
+    function deleteRecord(id) {
+      records = records.filter(r => r.id !== id);
+      saveToStorage();
+      initYearFilter();
+      refreshDashboard();
+      showToast('Record removed');
+    }
+
+    function onYearChange(val) {
+      selectedYear = parseInt(val, 10);
+      refreshDashboard();
+    }
+
+    function handleCurrencyChange(val) {
+      currencySymbol = val;
+      localStorage.setItem(CURRENCY_KEY, currencySymbol);
+      updateCurrencyLabels();
+      refreshDashboard();
+    }
+
+    function updateCurrencyLabels() {
+      document.querySelectorAll('.currencyLabel').forEach(el => {
+        el.innerText = currencySymbol;
+      });
+    }
+
+    function formatCurrency(amount) {
+      const formatted = Number(amount).toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      });
+      return `${currencySymbol}${formatted}`;
+    }
+
+    function saveToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+
+    function exportToCSV() {
+      if (records.length === 0) {
+        showToast('No records available to export.');
+        return;
+      }
+
+      let csv = 'Year,Month,Month_Name,Sales,Expense,Profit\n';
+      const sorted = [...records].sort((a,b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+
+      sorted.forEach(r => {
+        csv += `${r.year},${r.month},${FULL_MONTH_NAMES[r.month-1]},${r.sales},${r.expense},${r.profit}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `BizPulse_Financials_${selectedYear}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('CSV downloaded successfully');
+    }
+
+    function loadSampleData(notify = true) {
+      const currentYear = new Date().getFullYear();
+      const demoData = [
+        { id: 'd1', year: currentYear, month: 1, sales: 125000, expense: 82000, profit: 43000 },
+        { id: 'd2', year: currentYear, month: 2, sales: 138000, expense: 89000, profit: 49000 },
+        { id: 'd3', year: currentYear, month: 3, sales: 155000, expense: 94000, profit: 61000 },
+        { id: 'd4', year: currentYear, month: 4, sales: 172000, expense: 105000, profit: 67000 },
+        { id: 'd5', year: currentYear, month: 5, sales: 190000, expense: 112000, profit: 78000 },
+        { id: 'd6', year: currentYear, month: 6, sales: 210000, expense: 125000, profit: 85000 },
+        { id: 'd7', year: currentYear, month: 7, sales: 225000, expense: 130000, profit: 95000 },
+        { id: 'd8', year: currentYear, month: 8, sales: 240000, expense: 142000, profit: 98000 },
+        { id: 'd9', year: currentYear, month: 9, sales: 260000, expense: 155000, profit: 105000 },
+        { id: 'd10', year: currentYear - 1, month: 10, sales: 98000, expense: 70000, profit: 28000 },
+        { id: 'd11', year: currentYear - 1, month: 11, sales: 115000, expense: 81000, profit: 34000 },
+        { id: 'd12', year: currentYear - 1, month: 12, sales: 130000, expense: 86000, profit: 44000 }
+      ];
+
+      records = demoData;
+      selectedYear = currentYear;
+      saveToStorage();
+      initYearFilter();
+      refreshDashboard();
+      if (notify) showToast('Sample demo dataset loaded!');
+    }
   </script>
 </body>
 </html>

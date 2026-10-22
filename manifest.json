@@ -1,9 +1,9 @@
 {
-  "name": "Finance Tracker",
-  "short_name": "FinTrack",
+  "name": "BizPulse Financial Tracker",
+  "short_name": "BizPulse",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0f172a",
+  "background_color": "#f8fafc",
   "theme_color": "#2563eb",
   "orientation": "portrait",
   "icons": [
