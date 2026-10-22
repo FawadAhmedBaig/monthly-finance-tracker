@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Monthly Finance Tracker</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #f1f5f9; color: #1e293b; padding-bottom: 70px; }
+    header { background: #2563eb; color: #fff; padding: 18px 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 1.25rem; font-weight: 700; }
+    select.currency-select { background: #1d4ed8; color: #fff; border: 1px solid #60a5fa; border-radius: 6px; padding: 6px 10px; font-weight: 600; font-size: 0.9rem; outline: none; }
+    .container { max-width: 900px; margin: 20px auto; padding: 0 16px; display: flex; flex-direction: column; gap: 20px; }
+    .card { background: #ffffff; border-radius: 12px; padding: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 14px; color: #0f172a; display: flex; justify-content: space-between; align-items: center; }
+    .chart-wrapper { position: relative; width: 100%; min-height: 280px; max-height: 400px; }
+    form { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media(min-width: 600px) {
+      form { grid-template-columns: repeat(2, 1fr); }
+      .full-width { grid-column: span 2; }
+    }
+    label { font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 4px; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.15s; }
+    input:focus { border-color: #2563eb; ring: 2px solid #93c5fd; }
+    .input-readonly { background-color: #f8fafc; font-weight: bold; color: #16a34a; }
+    button.btn-primary { background: #2563eb; color: #fff; font-weight: 600; border: none; border-radius: 8px; padding: 12px; font-size: 1rem; cursor: pointer; transition: background 0.2s; width: 100%; }
+    button.btn-primary:active { background: #1d4ed8; }
+    button.btn-export { background: transparent; border: 1px solid #cbd5e1; color: #475569; padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; }
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th { background: #f8fafc; color: #64748b; font-weight: 600; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+    .c-sales { color: #2563eb; font-weight: 600; }
+    .c-expense { color: #dc2626; font-weight: 600; }
+    .c-profit { color: #16a34a; font-weight: 600; }
+    .btn-delete { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>FinTrack App</h1>
+    <select id="currencySelector" class="currency-select" onchange="updateCurrency()">
+      <option value="$">USD ($)</option>
+      <option value="Rs. " selected>PKR (Rs.)</option>
+      <option value="€">EUR (€)</option>
+      <option value="£">GBP (£)</option>
+    </select>
+  </header>
+
+  <main class="container">
+    <!-- Chart Box -->
+    <section class="card">
+      <div class="card-title">
+        <span>Monthly Triple Bar Graph</span>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="monthlyChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Entry Form -->
+    <section class="card">
+      <div class="card-title">
+        <span>Add / Update Month Data</span>
+      </div>
+      <form id="financeForm" onsubmit="handleFormSubmit(event)">
+        <div>
+          <label for="monthInput">Month</label>
+          <input type="month" id="monthInput" required>
+        </div>
+        <div>
+          <label for="salesInput">Sales</label>
+          <input type="number" id="salesInput" step="any" placeholder="0.00" required oninput="calcProfit()">
+        </div>
+        <div>
+          <label for="expenseInput">Expense</label>
+          <input type="number" id="expenseInput" step="any" placeholder="0.00" required oninput="calcProfit()">
+        </div>
+        <div>
+          <label for="profitInput">Profit (Auto-calculated)</label>
+          <input type="number" id="profitInput" step="any" class="input-readonly" placeholder="0.00" readonly>
+        </div>
+        <div class="full-width">
+          <button type="submit" class="btn-primary">Save Month Data</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Records Table -->
+    <section class="card">
+      <div class="card-title">
+        <span>History</span>
+        <button class="btn-export" onclick="exportCSV()">Export CSV</button>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Sales</th>
+              <th>Expense</th>
+              <th>Profit</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="dataTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let currency = localStorage.getItem('fin_currency') || 'Rs. ';
+    document.getElementById('currencySelector').value = currency;
+
+    // Load initial data or provide starter records
+    let records = JSON.parse(localStorage.getItem('fin_records')) || [
+      { month: '2026-01', sales: 150000, expense: 95000, profit: 55000 },
+      { month: '2026-02', sales: 180000, expense: 110000, profit: 70000 },
+      { month: '2026-03', sales: 210000, expense: 125000, profit: 85000 }
+    ];
+
+    let chartInstance = null;
+
+    function formatMonth(ymStr) {
+      if (!ymStr) return '';
+      const [year, month] = ymStr.split('-');
+      const date = new Date(year, month - 1);
+      return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+    }
+
+    function calcProfit() {
+      const sales = parseFloat(document.getElementById('salesInput').value) || 0;
+      const expense = parseFloat(document.getElementById('expenseInput').value) || 0;
+      document.getElementById('profitInput').value = (sales - expense).toFixed(2);
+    }
+
+    function updateCurrency() {
+      currency = document.getElementById('currencySelector').value;
+      localStorage.setItem('fin_currency', currency);
+      renderAll();
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const month = document.getElementById('monthInput').value;
+      const sales = parseFloat(document.getElementById('salesInput').value) || 0;
+      const expense = parseFloat(document.getElementById('expenseInput').value) || 0;
+      const profit = parseFloat(document.getElementById('profitInput').value) || 0;
+
+      const existingIndex = records.findIndex(r => r.month === month);
+      if (existingIndex > -1) {
+        records[existingIndex] = { month, sales, expense, profit };
+      } else {
+        records.push({ month, sales, expense, profit });
+      }
+
+      records.sort((a, b) => a.month.localeCompare(b.month));
+      localStorage.setItem('fin_records', JSON.stringify(records));
+      e.target.reset();
+      renderAll();
+    }
+
+    function deleteRecord(month) {
+      if (confirm(`Remove records for ${formatMonth(month)}?`)) {
+        records = records.filter(r => r.month !== month);
+        localStorage.setItem('fin_records', JSON.stringify(records));
+        renderAll();
+      }
+    }
+
+    function exportCSV() {
+      let csv = 'Month,Sales,Expense,Profit\n';
+      records.forEach(r => {
+        csv += `${r.month},${r.sales},${r.expense},${r.profit}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'finance_records.csv');
+      a.click();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('dataTableBody');
+      tbody.innerHTML = '';
+      if (records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">No entries yet. Add above!</td></tr>`;
+        return;
+      }
+      records.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${formatMonth(r.month)}</strong></td>
+          <td class="c-sales">${currency}${r.sales.toLocaleString()}</td>
+          <td class="c-expense">${currency}${r.expense.toLocaleString()}</td>
+          <td class="c-profit">${currency}${r.profit.toLocaleString()}</td>
+          <td><button class="btn-delete" onclick="deleteRecord('${r.month}')">✕</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderChart() {
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
+      const labels = records.map(r => formatMonth(r.month));
+      const salesData = records.map(r => r.sales);
+      const expenseData = records.map(r => r.expense);
+      const profitData = records.map(r => r.profit);
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Sales', data: salesData, backgroundColor: '#2563eb', borderRadius: 4 },
+            { label: 'Expense', data: expenseData, backgroundColor: '#dc2626', borderRadius: 4 },
+            { label: 'Profit', data: profitData, backgroundColor: '#16a34a', borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12, font: { weight: 'bold' } } },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.dataset.label}: ${currency}${context.raw.toLocaleString()}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) { return currency + value.toLocaleString(); }
+              },
+              grid: { color: '#f1f5f9' }
+            },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderAll() {
+      renderTable();
+      renderChart();
+    }
+
+    // Set default month to current month in input
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById('monthInput').value = ym;
+
+    // Service Worker Registration for Offline Capability
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('PWA Service Worker registered'))
+          .catch((err) => console.log('SW registration error:', err));
+      });
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
